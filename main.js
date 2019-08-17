@@ -1,6 +1,10 @@
 const fs = require('fs')
 
-const { isArrayWithValue } = require('./utils')
+const {
+    isArrayWithValue,
+    trimUnnecessaryPathSuffix,
+    createAliasMapping
+} = require('./utils')
 
 const {
     NEW_LINE_WITH_1_TAB,
@@ -39,14 +43,8 @@ const updateConfig = ({ filePath, newConfigText, configKey, shortIndent, longInd
 }
 
 const updatePackagePaths = (applicationRoot, newAlias, newAliasMapping) => {
-    const [updatedAliasText, updatedAliasMapping] = [newAlias, newAliasMapping].map(aliasType =>
-        aliasType.slice(aliasType.length - 2) === '/*' ?
-            aliasType.slice(0, aliasType.length - 2) :
-            aliasType
-    )
-
     const filePath      = `${applicationRoot}/package.json`
-    const newConfigText = `"${updatedAliasText}": "dist/src/${updatedAliasMapping}"`
+    const newConfigText = `"${newAlias}": "dist/src/${newAliasMapping}"`
 
     updateConfig({
         filePath,
@@ -58,26 +56,32 @@ const updatePackagePaths = (applicationRoot, newAlias, newAliasMapping) => {
 }
 
 const updateTsPaths = (applicationRoot, newAlias, newAliasMapping) => {
-    const filePath      = `${applicationRoot}/tsconfig.json`
-    const newConfigText = `"${newAlias}": ["${newAliasMapping}"]`
+    const filePath = `${applicationRoot}/tsconfig.json`
 
-    updateConfig({
-        filePath,
-        newConfigText,
-        configKey: TS_CONFIG_KEY,
-        shortIndent: NEW_LINE_WITH_2_TABS,
-        longIndent: NEW_LINE_WITH_3_TABS
+    const newIndexConfig     = `"${newAlias}": ["${newAliasMapping}"]`
+    const newDirectoryConfig = `"${newAlias}/*": ["${newAliasMapping}/*"]`
+
+    const newConfigs = [newIndexConfig, newDirectoryConfig]
+
+    newConfigs.forEach((newConfigText) => {
+        updateConfig({
+            filePath,
+            newConfigText,
+            configKey: TS_CONFIG_KEY,
+            shortIndent: NEW_LINE_WITH_2_TABS,
+            longIndent: NEW_LINE_WITH_3_TABS
+        })
     })
 }
 
 function injectImportAlias(applicationRoot, newAlias) {
-    const aliasMapping = newAlias[0].match(/[^a-zA-Z0-9]/) ?
-        newAlias.slice(1, newAlias.length) :
-        newAlias
+    const aliasMapping = createAliasMapping(newAlias)
 
-    updateTsPaths(applicationRoot, newAlias, aliasMapping)
+    const [updatedAliasText, updatedAliasMapping] = [newAlias, aliasMapping].map(trimUnnecessaryPathSuffix)
 
-    updatePackagePaths(applicationRoot, newAlias, aliasMapping)
+    updateTsPaths(applicationRoot, updatedAliasText, updatedAliasMapping)
+
+    updatePackagePaths(applicationRoot, updatedAliasText, updatedAliasMapping)
 }
 
 module.exports = injectImportAlias

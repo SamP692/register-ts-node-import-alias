@@ -23,7 +23,17 @@ const respondToBadArguments = (args) => {
 
 const isArrayWithValue = arr => Array.isArray(arr) && arr.length > 0 && !(arr.length === 1 && arr[0] === '')
 
+const trimUnnecessaryPathSuffix = path => path.slice(path.length - 2) === '/*' ?
+    path.slice(0, path.length - 2) :
+    path
+
+const createAliasMapping = newAlias => newAlias[0].match(/[^a-zA-Z0-9]/) ?
+    newAlias.slice(1, newAlias.length) :
+    newAlias
+
 module.exports = {
     respondToBadArguments,
-    isArrayWithValue
+    isArrayWithValue,
+    trimUnnecessaryPathSuffix,
+    createAliasMapping
 }

@@ -1,5 +1,6 @@
-const { respondToBadArguments } = require('./utils')
 const injectImportAlias = require('./main')
+
+const { respondToBadArguments } = require('./utils')
 const { COMMAS_INCLUDED_ERROR } = require('./consts')
 
 const callDirectory = process.cwd()
