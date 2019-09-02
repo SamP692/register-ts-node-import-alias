@@ -42,9 +42,11 @@ const updateConfig = ({ filePath, newConfigText, configKey, shortIndent, longInd
     fs.writeFileSync(filePath, finalFile)
 }
 
-const updatePackagePaths = (applicationRoot, newAlias, newAliasMapping) => {
+const updatePackagePaths = (applicationRoot, path, newAlias, newAliasMapping) => {
     const filePath      = `${applicationRoot}/package.json`
-    const newConfigText = `"${newAlias}": "dist/src/${newAliasMapping}"`
+    const pathToAliased = path ? `dist/${path}` : 'dist'
+
+    const newConfigText = `"${newAlias}": "${pathToAliased}/${newAliasMapping}"`
 
     updateConfig({
         filePath,
@@ -55,11 +57,12 @@ const updatePackagePaths = (applicationRoot, newAlias, newAliasMapping) => {
     })
 }
 
-const updateTsPaths = (applicationRoot, newAlias, newAliasMapping) => {
+const updateTsPaths = (applicationRoot, path, newAlias, newAliasMapping) => {
     const filePath = `${applicationRoot}/tsconfig.json`
+    const pathToAliased = path ? `${path}/${newAliasMapping}` : newAliasMapping
 
-    const newIndexConfig     = `"${newAlias}": ["${newAliasMapping}"]`
-    const newDirectoryConfig = `"${newAlias}/*": ["${newAliasMapping}/*"]`
+    const newIndexConfig     = `"${newAlias}": ["${pathToAliased}"]`
+    const newDirectoryConfig = `"${newAlias}/*": ["${pathToAliased}/*"]`
 
     const newConfigs = [newIndexConfig, newDirectoryConfig]
 
@@ -74,14 +77,14 @@ const updateTsPaths = (applicationRoot, newAlias, newAliasMapping) => {
     })
 }
 
-function injectImportAlias(applicationRoot, newAlias) {
+function injectImportAlias(applicationRoot, newAlias, path) {
     const aliasMapping = createAliasMapping(newAlias)
 
     const [updatedAliasText, updatedAliasMapping] = [newAlias, aliasMapping].map(trimUnnecessaryPathSuffix)
 
-    updateTsPaths(applicationRoot, updatedAliasText, updatedAliasMapping)
+    updateTsPaths(applicationRoot, path, updatedAliasText, updatedAliasMapping)
 
-    updatePackagePaths(applicationRoot, updatedAliasText, updatedAliasMapping)
+    updatePackagePaths(applicationRoot, path, updatedAliasText, updatedAliasMapping)
 }
 
 module.exports = injectImportAlias

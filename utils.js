@@ -1,24 +1,33 @@
-const {
-    NO_ARGS_ERROR,
-    TOO_MANY_ARGS_ERROR
-} = require('./consts')
+const extractArguments = (args) => {
+    if (args.length === 0) return {}
 
-const respondToBadArguments = (args) => {
-    if (args.length === 0) {
-        console.warn(NO_ARGS_ERROR)
-    } else {
-        const initialTooManyArgsString = TOO_MANY_ARGS_ERROR + '\n'
+    const newArgs = {}
 
-        const tooManyArgsString = args.reduce((finalString, currentArg, argIdx) => {
-            let stringAddition = `  ${argIdx + 1}: '${currentArg}'`
+    let runningArgs = [...args]
+    while(runningArgs.length > 0) {
+        const loopArg = typeof runningArgs[0] === 'string' ? runningArgs[0].toLowerCase() : ''
 
-            if (argIdx + 1 < args.length) stringAddition += '\n'
+        const argIsSupportedArg = ['-p', '--path', '-a', '--alias'].reduce(
+            (doesInc, supArg) => doesInc || loopArg === supArg,
+            false
+        )
 
-            return finalString + stringAddition
-        }, initialTooManyArgsString)
+        let killThroughIndex = 1
 
-        console.error(tooManyArgsString)
+        if (argIsSupportedArg && runningArgs.length > 1) {
+            killThroughIndex = 2
+
+            const argKey = (loopArg === '-p' || loopArg === '--path') ? 'path' : 'alias'
+
+            newArgs[argKey] = runningArgs[1]
+        } else if (!argIsSupportedArg && runningArgs.length === 1) {
+            newArgs['alias'] = loopArg
+        }
+
+        runningArgs = runningArgs.slice(killThroughIndex)
     }
+
+    return newArgs
 }
 
 const isArrayWithValue = arr => Array.isArray(arr) && arr.length > 0 && !(arr.length === 1 && arr[0] === '')
@@ -32,8 +41,8 @@ const createAliasMapping = newAlias => newAlias[0].match(/[^a-zA-Z0-9]/) ?
     newAlias
 
 module.exports = {
-    respondToBadArguments,
     isArrayWithValue,
     trimUnnecessaryPathSuffix,
-    createAliasMapping
+    createAliasMapping,
+    extractArguments
 }
